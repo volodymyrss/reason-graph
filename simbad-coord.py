@@ -220,7 +220,7 @@ Simbad.remove_votable_fields("coo_wavelength")
 Simbad.add_votable_fields("coo_wavelength")
 
 
-# refer simbad types to to https://ivoa.net/documents/Notes/AstrObjectOntology/
+# refer simbad types to to httpfSis://ivoa.net/documents/Notes/AstrObjectOntology/
 # https://www.ivoa.net/rdf/object-type/2020-10-06/object-type.rdf
 
 # e.g. http://simbad.u-strasbg.fr/simbad/otypes#
@@ -241,8 +241,8 @@ for w in odakb.sparql.select('?aobj a oda:AstrophysicalObject; rdfs:label ?label
 
     # print(r)
 
-    if '3C' not in w['label']:
-        continue
+    # if '3C' not in w['label']:
+    #     continue
 
     print(f"\033[31m{w['label']}\033[0m")
     
@@ -256,9 +256,18 @@ for w in odakb.sparql.select('?aobj a oda:AstrophysicalObject; rdfs:label ?label
 
     print(f"\"{otype}\"")
 
+    G = rdflib.Graph()
+
+    for k, v in dict(result_table[0]).items():
+        print(k, v)
+        G.add([
+                rdflib.term.URIRef(w['aobj']),
+                rdflib.term.URIRef(f"http://odahub.io/ontology#simbad{k}"),
+                rdflib.term.Literal(v)
+            ])
+
     # TODO: deeper
 
-    G = rdflib.Graph()
     for t in ivoa_ot_G.query(f'CONSTRUCT WHERE {{ ?obj rdfs:label "{otype}"; ?p ?o }}'):
         G.add(t)
 

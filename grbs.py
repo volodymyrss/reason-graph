@@ -3,7 +3,7 @@ import odakb.sparql
 
 for grb in odakb.sparql.select('?paper paper:mentions_named_grb ?name; paper:grb_isot ?grb_isot'): 
     print(grb)
-    if '211112A' not in str(grb): continue
+    # if '211112A' not in str(grb): continue
 
     time_instant = "oda:TimeI" + hashlib.md5(grb["grb_isot"].encode()).hexdigest()[:8]
     

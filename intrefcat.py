@@ -15,12 +15,28 @@ import odakb.sparql
 G = rdflib.Graph()
 isdcrefcat_ns = rdflib.Namespace('http://odahub.io/ontology/intrefcat#')
 oda_ns = rdflib.Namespace('http://odahub.io/ontology#')
+rdfs_ns = rdflib.Namespace('http://www.w3.org/2000/01/rdf-schema#')
+rdf_ns = rdflib.Namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
+
+
 # G.bind('oda', oda_ns)
 # G.bind('isdcrefcat', isdcrefcat_ns)
 
 for r in cat[m]:
     name = r['NAME']
     sname = re.sub("[^0-9a-zA-Z]", "", name)
+
+    G.add((
+        oda_ns[f'object/{sname}'],
+        rdf_ns['type'],
+        oda_ns['AstrophysicalObject']
+    ))
+    G.add((
+        oda_ns[f'object/{sname}'],
+        rdfs_ns['label'],
+        rdflib.Literal(name)
+    ))
+    
 
     for c in cat.columns:
         if len(c.dtype.shape)>0:

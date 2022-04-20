@@ -39,7 +39,8 @@ for w in odakb.sparql.select('?aobj a oda:AstrophysicalObject; rdfs:label ?label
     #     '''
 
 
-    if 'Mrk' not in w['label']:
+    if 'PKS' not in w['label']:
+        print("skippping", w['label'])
         continue
 
     print(f"\033[31m{w['aobj']}\033[0m")

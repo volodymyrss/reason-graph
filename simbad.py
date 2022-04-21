@@ -1,6 +1,8 @@
 #!/bin/env python
 
+import json
 import os
+import re
 import rdflib
 import requests
 import odakb.sparql
@@ -32,61 +34,70 @@ ivoa_ot_G.parse('https://www.ivoa.net/rdf/object-type/2020-10-06/object-type.rdf
 #ivoa_ot_G.parse(requests.get('https://www.ivoa.net/rdf/object-type/2020-10-06/object-type.rdf').text, format='xml')
 
 
-for w in odakb.sparql.select('?aobj a oda:AstrophysicalObject; rdfs:label ?label'): 
-    # r = f'''
-    #         <{w['wfl']}> a oda:Workflow;
-    #                      oda:has_input oda:AstroObject .
-    #     '''
+def run(n_max=5, pattern=".*", ingest=False): # TODO: track input
+    n = 0
 
+    tG = rdflib.Graph()
 
-    if 'PKS' not in w['label']:
-        print("skippping", w['label'])
-        continue
+    for w in odakb.sparql.select('?aobj a oda:AstrophysicalObject; rdfs:label ?label'): 
 
-    print(f"\033[31m{w['aobj']}\033[0m")
-    print(f"\033[31m{w['label']}\033[0m")
-    
-    result_table = Simbad.query_object(w['label'], wildcard=False)
-    print(result_table)
+        if not re.search(pattern, w['label']):
+            print("skippping", w['label'])
+            continue
 
-    if result_table is None:
-        continue
+        print(f"\033[31m{w['aobj']}\033[0m")
+        print(f"\033[31m{w['label']}\033[0m")
+        
+        result_table = Simbad.query_object(w['label'], wildcard=False)
+        print(result_table)
 
-    otype = str(result_table[0]['OTYPE']).strip()
+        if result_table is None:
+            continue
 
-    print(f"\"{otype}\"")
+        otype = str(result_table[0]['OTYPE']).strip()
 
-    # TODO: deeper
+        print(f"\"{otype}\"")
 
-    G = rdflib.Graph()
-    for t in ivoa_ot_G.query(f'CONSTRUCT WHERE {{ ?obj rdfs:label "{otype}"; ?p ?o }}'):
-        G.add(t)
+        # TODO: deeper
 
-    print(G.serialize(format='turtle'))
+        G = rdflib.Graph()
+        for t in ivoa_ot_G.query(f'CONSTRUCT WHERE {{ ?obj rdfs:label "{otype}"; ?p ?o }}'):
+            G.add(t)
 
-    objs = list(ivoa_ot_G.query(f'SELECT ?obj WHERE {{ ?obj rdfs:label "{otype}" }}'))
-    
-    r = f'''
-            <{w['aobj']}> oda:simbadOTYPE "{otype}" .
-        '''
+        print(G.serialize(format='turtle'))
 
-    for obj in objs:
-        r += f'''
-            <{w['aobj']}> a <{obj[0]}> .
-        '''
+        objs = list(ivoa_ot_G.query(f'SELECT ?obj WHERE {{ ?obj rdfs:label "{otype}" }}'))
+        
+        r = f'''
+                @prefix oda: <http://odahub.io/ontology#> .
+                <{w['aobj']}> oda:simbadOTYPE "{otype}" .
+            '''
 
-    for s, p, o in G:
-        r += f'''
-            {s.n3()} {p.n3()} {o.n3()} .
-        '''
+        for obj in objs:
+            r += f'''
+                <{w['aobj']}> a <{obj[0]}> .
+            '''
 
+        for s, p, o in G:
+            r += f'''
+                {s.n3()} {p.n3()} {o.n3()} .
+            '''
 
+        print(r)
 
-    print(r)
+        if ingest:
+            odakb.sparql.insert(r)
+        
+        n += 1
 
-    odakb.sparql.insert(r)
-    
+        if n > n_max:
+            print(f"reaching max {n_max}: breaking")
+            break
 
-    break
+        tG.parse(data=r)
 
+    R = list(map(list, tG))
 
+    print(json.dumps(R, sort_keys=True, indent=4))
+
+    return R

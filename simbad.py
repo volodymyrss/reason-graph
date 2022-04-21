@@ -87,6 +87,6 @@ for w in odakb.sparql.select('?aobj a oda:AstrophysicalObject; rdfs:label ?label
     odakb.sparql.insert(r)
     
 
-    #break
+    break
 
 

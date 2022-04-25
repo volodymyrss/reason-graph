@@ -2,26 +2,32 @@ import hashlib
 import odakb.sparql
 import re
 
-data = ""
 
-for event in odakb.sparql.select('?paper paper:mentions_named_event ?name', limit=10000): 
-    if "PKS" not in event["name"]: continue
+def run(ingest=False):
+    data = ""
 
-    print(event)
+    for event in odakb.sparql.select('?paper paper:mentions_named_event ?name', limit=10000): 
+        if "PKS" not in event["name"]: continue
 
-    r_uri = re.sub("[^0-9a-zA-Z]", "", event["name"])
+        print(event)
 
-    r = f'''
-        oda:{r_uri} a oda:AstrophysicalObject;
-                          rdfs:label "{event["name"]}" .
+        r_uri = re.sub("[^0-9a-zA-Z]", "", event["name"])
 
-        <{event['paper']}> paper:mentions_named_event oda:{r_uri} .
-   
-        oda:{r_uri} oda:cited_in <{event['paper']}>  .
-        '''
+        r = f'''
+            oda:{r_uri} a oda:AstrophysicalObject;
+                              rdfs:label "{event["name"]}" .
 
-    print(r)
+            <{event['paper']}> paper:mentions_named_event oda:{r_uri} .
+       
+            oda:{r_uri} oda:cited_in <{event['paper']}>  .
+            '''
 
-    data += r
+        print(r)
 
-odakb.sparql.insert(data)
+        data += r
+
+    odakb.sparql.insert(data)
+
+
+if __name__ == "__main__":
+    run(ingest=True)
